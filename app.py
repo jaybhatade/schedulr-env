@@ -114,3 +114,7 @@ def step(action: str):
 @app.get("/state")
 def get_state():
     return state
+
+@app.get("/")
+def home():
+    return {"message": "SchedulrEnv is running"}
