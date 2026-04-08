@@ -51,3 +51,6 @@ packages = ["schedulr_env"]
 
 [tool.setuptools.package-data]
 schedulr_env = ["*.yaml"]
+
+[project.scripts]
+server = "server.app:app"
