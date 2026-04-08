@@ -118,11 +118,3 @@ def get_state():
 @app.get("/")
 def home():
     return {"message": "SchedulrEnv is running"}
-
-@app.get("/test-reset")
-def test_reset():
-    return reset_env("easy")
-
-@app.get("/test-step")
-def test_step():
-    return step("Meeting")
