@@ -110,3 +110,7 @@ def step(action: str):
         "error": None,
         "state": state
     }
+
+@app.get("/state")
+def get_state():
+    return state
