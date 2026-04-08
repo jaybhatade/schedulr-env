@@ -1,0 +1,19 @@
+name: SchedulrEnv
+description: A real-world task scheduling environment where an agent optimizes a workday by selecting tasks based on priority, time, and energy constraints.
+
+version: 1.0
+
+tasks:
+  - name: easy
+    description: Small set of tasks with minimal constraints.
+
+  - name: medium
+    description: Moderate number of tasks with priorities and interruptions.
+
+  - name: hard
+    description: Complex scheduling with limited time, high-priority tasks, and interruptions.
+
+entrypoint:
+  reset: /reset
+  step: /step
+  state: /state
