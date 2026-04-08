@@ -51,4 +51,4 @@ Documentation = "https://huggingface.co/spaces/jaybhatade/schedulr-env"
 schedulr_env = ["*.yaml"]
 
 [project.scripts]
-server = "server.app:app"
+server = "server.app:main"
