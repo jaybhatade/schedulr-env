@@ -46,8 +46,6 @@ Homepage = "https://huggingface.co/spaces/jaybhatade/schedulr-env"
 Repository = "https://huggingface.co/spaces/jaybhatade/schedulr-env"
 Documentation = "https://huggingface.co/spaces/jaybhatade/schedulr-env"
 
-[tool.setuptools]
-packages = ["schedulr_env"]
 
 [tool.setuptools.package-data]
 schedulr_env = ["*.yaml"]
