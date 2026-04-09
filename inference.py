@@ -2,48 +2,66 @@ import os
 from openai import OpenAI
 import requests
 
-API_BASE_URL = os.environ["API_BASE_URL"]
+ENV_URL = os.getenv("ENV_URL", "http://localhost:8000")
+LLM_BASE_URL = os.environ["API_BASE_URL"]
+MODEL_NAME = os.environ.get("MODEL_NAME") or "gpt-4o-mini"
 
 client = OpenAI(
-    base_url=os.environ["API_BASE_URL"],
+    base_url=LLM_BASE_URL,
     api_key=os.environ["API_KEY"]
 )
 
-task_name = "easy"
-env_name = "SchedulrEnv"
-
-print(f"[START] task={task_name} env={env_name}")
+print("[START] running inference")
 
 rewards = []
 step_num = 0
 success = False
 
-# Reset environment
-requests.post(f"{API_BASE_URL}/reset")
+# reset env
+try:
+    requests.post(f"{ENV_URL}/reset", timeout=5)
+except Exception as e:
+    print(f"[ERROR] reset failed: {e}")
 
 for _ in range(5):
     step_num += 1
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {
-                "role": "user",
-                "content": "Choose one task from: Meeting, Email, DeepWork, Break. Return only the task name."
-            }
-        ]
-    )
+    try:
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {
+                    "role": "user",
+                    "content": "Choose one: Meeting, Email, DeepWork, Break. Only return the word."
+                }
+            ]
+        )
 
-    action = response.choices[0].message.content.strip()
+        raw_action = response.choices[0].message.content.strip()
 
-    res = requests.post(
-        f"{API_BASE_URL}/step",
-        params={"action": action}
-    ).json()
+        valid_actions = ["Meeting", "Email", "DeepWork", "Break"]
+        action = next((a for a in valid_actions if a.lower() in raw_action.lower()), "Email")
 
-    reward = float(res.get("reward", 0))
-    done = res.get("done", False)
-    error = res.get("error")
+    except Exception as e:
+        print(f"[ERROR] LLM failed: {e}")
+        action = "Email"
+
+    try:
+        res = requests.post(
+            f"{ENV_URL}/step",
+            params={"action": action},
+            timeout=5
+        ).json()
+
+        reward = float(res.get("reward", 0))
+        done = res.get("done", False)
+        error = res.get("error")
+
+    except Exception as e:
+        print(f"[ERROR] step failed: {e}")
+        reward = 0
+        done = True
+        error = "exception"
 
     rewards.append(f"{reward:.2f}")
 
