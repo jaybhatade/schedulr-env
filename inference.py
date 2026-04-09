@@ -57,14 +57,16 @@ for _ in range(10):
             timeout=5
         ).json()
 
-        reward = float(res.get("reward", 0))
+        
+        reward = float(res.get("reward", 0.01))
+        reward = max(0.01, min(0.99, reward))
         done = res.get("done", False)
         error = res.get("error")
 
     except Exception as e:
         print(f"[ERROR] step failed: {e}")
         reward = 0.01
-        done = True
+        done = False
         error = "exception"
 
     rewards.append(f"{reward:.2f}")
