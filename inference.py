@@ -2,7 +2,7 @@ import os
 from openai import OpenAI
 import requests
 
-ENV_URL = os.getenv("ENV_URL", "http://localhost:8000")
+ENV_URL = os.getenv("ENV_URL", "http://localhost:7860")
 LLM_BASE_URL = os.environ["API_BASE_URL"]
 MODEL_NAME = os.environ.get("MODEL_NAME") or "gpt-4o-mini"
 
@@ -28,16 +28,18 @@ for _ in range(5):
 
     try:
         response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[
-                {
-                    "role": "user",
-                    "content": "Choose one: Meeting, Email, DeepWork, Break. Only return the word."
-                }
-            ]
-        )
+    model=MODEL_NAME,
+    messages=[
+        {
+            "role": "user",
+            "content": "Choose one: Meeting, Email, DeepWork, Break. Only return the word."
+        }
+    ],
+    timeout=10
+)
+    
 
-        raw_action = response.choices[0].message.content.strip()
+        raw_action = response.choices[0].message.content.strip() if response.choices else "Email"
 
         valid_actions = ["Meeting", "Email", "DeepWork", "Break"]
         action = next((a for a in valid_actions if a.lower() in raw_action.lower()), "Email")
