@@ -24,9 +24,10 @@ except Exception as e:
     print(f"[ERROR] reset failed: {e}")
 
 
-for _ in range(8):
+for _ in range(10):
     step_num += 1
 
+    
     try:
         response = client.chat.completions.create(
             model=MODEL_NAME,
@@ -48,6 +49,7 @@ for _ in range(8):
         print(f"[ERROR] LLM failed: {e}")
         action = "Email"
 
+    
     try:
         res = requests.post(
             f"{ENV_URL}/step",
