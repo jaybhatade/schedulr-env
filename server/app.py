@@ -6,14 +6,14 @@ app = FastAPI()
 state = {}
 
 def get_tasks(task_type):
-    
+
     if task_type == "easy":
-    return [
-        {"name": "Email", "priority": 2, "time": 1},
-        {"name": "Meeting", "priority": 3, "time": 2},
-        {"name": "Break", "priority": 1, "time": 1},  
-    ], 4
-    
+        return [
+            {"name": "Email", "priority": 2, "time": 1},
+            {"name": "Meeting", "priority": 3, "time": 2},
+            {"name": "Break", "priority": 1, "time": 1},
+        ], 4
+
     elif task_type == "medium":
         return [
             {"name": "Email", "priority": 2, "time": 1},
@@ -22,7 +22,7 @@ def get_tasks(task_type):
             {"name": "Break", "priority": 1, "time": 1},
         ], 5
 
-    else:  
+    else:
         return [
             {"name": "Email", "priority": 2, "time": 1},
             {"name": "Meeting", "priority": 3, "time": 2},
@@ -68,7 +68,7 @@ def step(action: str):
 
     if not task:
         return {
-            "reward": 0.01,   
+            "reward": 0.01,
             "done": False,
             "error": "invalid_task",
             "state": state
@@ -87,7 +87,7 @@ def step(action: str):
     if task["priority"] == 3 and state["time_left"] > 0:
         base_reward += 0.2
 
-    
+
     reward = round(max(0.01, min(0.99, base_reward)), 2)
 
     if random.random() < 0.3:
@@ -97,7 +97,9 @@ def step(action: str):
             "time": 1
         })
 
+    
     done = (state["time_left"] <= 0 or len(state["tasks"]) == 0) and state["step"] >= 3
+
     return {
         "reward": reward,
         "done": done,
@@ -125,6 +127,7 @@ def main():
         port=7860,
         reload=False
     )
+
 
 if __name__ == "__main__":
     main()
