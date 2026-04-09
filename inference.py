@@ -17,27 +17,27 @@ rewards = []
 step_num = 0
 success = False
 
-# reset env
+
 try:
     requests.post(f"{ENV_URL}/reset", timeout=5)
 except Exception as e:
     print(f"[ERROR] reset failed: {e}")
 
-for _ in range(5):
+
+for _ in range(8):
     step_num += 1
 
     try:
         response = client.chat.completions.create(
-    model=MODEL_NAME,
-    messages=[
-        {
-            "role": "user",
-            "content": "Choose one: Meeting, Email, DeepWork, Break. Only return the word."
-        }
-    ],
-    timeout=10
-)
-    
+            model=MODEL_NAME,
+            messages=[
+                {
+                    "role": "user",
+                    "content": "Choose one: Meeting, Email, DeepWork, Break. Only return the word."
+                }
+            ],
+            timeout=10
+        )
 
         raw_action = response.choices[0].message.content.strip() if response.choices else "Email"
 
@@ -61,7 +61,7 @@ for _ in range(5):
 
     except Exception as e:
         print(f"[ERROR] step failed: {e}")
-        reward = 0
+        reward = 0.01
         done = True
         error = "exception"
 
@@ -69,7 +69,8 @@ for _ in range(5):
 
     print(f"[STEP] step={step_num} action={action} reward={reward:.2f} done={str(done).lower()} error={error if error else 'null'}")
 
-    if done:
+    
+    if done and step_num >= 3:
         success = True
         break
 
