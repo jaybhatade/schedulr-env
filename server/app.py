@@ -6,12 +6,14 @@ app = FastAPI()
 state = {}
 
 def get_tasks(task_type):
+    
     if task_type == "easy":
-        return [
-            {"name": "Email", "priority": 2, "time": 1},
-            {"name": "Meeting", "priority": 3, "time": 2},
-        ], 3
-
+    return [
+        {"name": "Email", "priority": 2, "time": 1},
+        {"name": "Meeting", "priority": 3, "time": 2},
+        {"name": "Break", "priority": 1, "time": 1},  
+    ], 4
+    
     elif task_type == "medium":
         return [
             {"name": "Email", "priority": 2, "time": 1},
@@ -20,7 +22,7 @@ def get_tasks(task_type):
             {"name": "Break", "priority": 1, "time": 1},
         ], 5
 
-    else:  # hard
+    else:  
         return [
             {"name": "Email", "priority": 2, "time": 1},
             {"name": "Meeting", "priority": 3, "time": 2},
@@ -95,8 +97,7 @@ def step(action: str):
             "time": 1
         })
 
-    done = state["time_left"] <= 0 or len(state["tasks"]) == 0
-
+    done = (state["time_left"] <= 0 or len(state["tasks"]) == 0) and state["step"] >= 3
     return {
         "reward": reward,
         "done": done,
