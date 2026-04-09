@@ -88,7 +88,8 @@ def step(action: str):
         base_reward += 0.2
 
 
-    reward = round(max(0.01, min(0.99, base_reward)), 2)
+    reward = max(0.01, min(0.99, base_reward))
+    reward = float(f"{reward:.2f}")
 
     if random.random() < 0.3:
         state["tasks"].append({
