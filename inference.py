@@ -2,30 +2,44 @@ import os
 from openai import OpenAI
 import requests
 
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
-MODEL_NAME = os.getenv("MODEL_NAME", "schedulr-baseline")
-HF_TOKEN = os.getenv("HF_TOKEN")
-if HF_TOKEN is None:
-    HF_TOKEN = "dummy_key"
-client = OpenAI(base_url="https://api.openai.com/v1", api_key=HF_TOKEN)
+API_BASE_URL = os.environ["API_BASE_URL"]
+
+client = OpenAI(
+    base_url=os.environ["API_BASE_URL"],
+    api_key=os.environ["API_KEY"]
+)
 
 task_name = "easy"
 env_name = "SchedulrEnv"
 
-print(f"[START] task={task_name} env={env_name} model={MODEL_NAME}")
+print(f"[START] task={task_name} env={env_name}")
 
 rewards = []
 step_num = 0
 success = False
 
+# Reset environment
 requests.post(f"{API_BASE_URL}/reset")
 
-actions = ["Meeting", "Email", "DeepWork", "Break"]
-
-for action in actions:
+for _ in range(5):
     step_num += 1
 
-    res = requests.post(f"{API_BASE_URL}/step", params={"action": action}).json()
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "user",
+                "content": "Choose one task from: Meeting, Email, DeepWork, Break. Return only the task name."
+            }
+        ]
+    )
+
+    action = response.choices[0].message.content.strip()
+
+    res = requests.post(
+        f"{API_BASE_URL}/step",
+        params={"action": action}
+    ).json()
 
     reward = float(res.get("reward", 0))
     done = res.get("done", False)
