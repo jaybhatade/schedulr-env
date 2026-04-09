@@ -62,39 +62,32 @@ def step(action: str):
 
     state["step"] += 1
 
-    # find task
     task = next((t for t in state["tasks"] if t["name"] == action), None)
 
     if not task:
         return {
-            "reward": 0.0,
+            "reward": 0.01,   
             "done": False,
             "error": "invalid_task",
             "state": state
         }
 
-    # apply task
     state["time_left"] -= task["time"]
     state["energy"] -= 10
     state["completed"].append(task["name"])
-
-    # remove task
     state["tasks"].remove(task)
 
-    # 🎯 Improved reward logic
-    base_reward = task["priority"] / 3  # normalize (1 → 0.33, 3 → 1.0)
+    base_reward = task["priority"] / 3
 
-    # penalty if energy too low
     if state["energy"] < 30:
         base_reward -= 0.2
 
-    # bonus for finishing high priority early
     if task["priority"] == 3 and state["time_left"] > 0:
         base_reward += 0.2
 
-    reward = round(max(0.0, min(1.0, base_reward)), 2)
+    
+    reward = round(max(0.01, min(0.99, base_reward)), 2)
 
-    # 🔥 interruption (only medium/hard feel)
     if random.random() < 0.3:
         state["tasks"].append({
             "name": "UrgentCall",
@@ -111,13 +104,16 @@ def step(action: str):
         "state": state
     }
 
+
 @app.get("/state")
 def get_state():
     return state
 
+
 @app.get("/")
 def home():
     return {"message": "SchedulrEnv is running"}
+
 
 import uvicorn
 
