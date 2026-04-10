@@ -58,14 +58,16 @@ for _ in range(10):
         ).json()
 
         
-        reward = float(res.get("reward", 0.01))
-        reward = max(0.01, min(0.99, reward))
+        reward = float(res.get("reward", 0.05))
+        
+        reward = max(0.05, min(0.95, reward))
         done = res.get("done", False)
         error = res.get("error")
 
-    except Exception as e:
+    
+        except Exception as e:
         print(f"[ERROR] step failed: {e}")
-        reward = 0.01
+        reward = 0.05  
         done = False
         error = "exception"
 
