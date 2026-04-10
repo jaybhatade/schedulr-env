@@ -10,3 +10,4 @@ def grade(states, rewards):
     # Ensure score is strictly between 0 and 1
     final_score = max(0.01, min(0.99, avg_reward))
     return final_score
+    
