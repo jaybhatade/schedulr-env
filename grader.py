@@ -1,13 +1,14 @@
 def grade(states, rewards):
     """
-    states: List of state dictionaries from each step
-    rewards: List of rewards from each step
+    This function calculates the final score for the hackathon task.
+    'states' is a list of the environment state at each step.
+    'rewards' is a list of the rewards returned by app.py.
     """
     if not rewards:
         return 0.05
     
     avg_reward = sum(rewards) / len(rewards)
     
-    final_score = max(0.05, min(0.95, avg_reward))
+    final_score = float(max(0.05, min(0.95, avg_reward)))
     
-    return float(final_score)
+    return final_score
