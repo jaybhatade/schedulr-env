@@ -51,6 +51,7 @@ for _ in range(10):
 
     
     try:
+        
         res = requests.post(
             f"{ENV_URL}/step",
             params={"action": action},
@@ -64,8 +65,7 @@ for _ in range(10):
         done = res.get("done", False)
         error = res.get("error")
 
-    
-        except Exception as e:
+    except Exception as e:
         print(f"[ERROR] step failed: {e}")
         reward = 0.05  
         done = False
