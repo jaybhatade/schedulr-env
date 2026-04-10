@@ -1,83 +1,156 @@
 import os
+import json
 from openai import OpenAI
 import requests
 
-ENV_URL = os.getenv("ENV_URL", "http://localhost:7860")
-LLM_BASE_URL = os.environ["API_BASE_URL"]
-MODEL_NAME = os.environ.get("MODEL_NAME") or "gpt-4o-mini"
+# Environment variables as per requirements
+API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
+HF_TOKEN = os.getenv("HF_TOKEN")
 
+# Optional - if using from_docker_image()
+LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
+
+ENV_URL = os.getenv("ENV_URL", "http://localhost:7860")
+
+# Initialize OpenAI client
 client = OpenAI(
-    base_url=LLM_BASE_URL,
-    api_key=os.environ["API_KEY"]
+    base_url=API_BASE_URL,
+    api_key=os.environ.get("API_KEY", os.environ.get("OPENAI_API_KEY", ""))
 )
 
-print("[START] running inference")
+def log_start(task: str, env: str, model: str):
+    """Log the start of inference in required format."""
+    print(f'[START] {{"task": "{task}", "env": "{env}", "model": "{model}"}}', flush=True)
 
-rewards = []
-step_num = 0
-success = False
+def log_step(step: int, action: str, reward: float, done: bool, error: str = None):
+    """Log each step in required format."""
+    error_str = f'"{error}"' if error else "null"
+    print(f'[STEP] {{"step": {step}, "action": "{action}", "reward": {reward:.2f}, "done": {str(done).lower()}, "error": {error_str}}}', flush=True)
 
+def log_end(success: bool, steps: int, score: float, rewards: list):
+    """Log the end of inference in required format."""
+    rewards_str = ",".join([f"{r:.2f}" for r in rewards])
+    print(f'[END] {{"success": {str(success).lower()}, "steps": {steps}, "score": {score:.4f}, "rewards": [{rewards_str}]}}', flush=True)
 
-try:
-    requests.post(f"{ENV_URL}/reset", timeout=5)
-except Exception as e:
-    print(f"[ERROR] reset failed: {e}")
-
-
-for _ in range(10):
-    step_num += 1
-
-    
+def get_llm_action(step_num: int, history: list) -> str:
+    """Get action from LLM."""
     try:
+        context = "\n".join(history[-5:]) if history else "Start scheduling your day."
+        
         response = client.chat.completions.create(
             model=MODEL_NAME,
             messages=[
                 {
+                    "role": "system",
+                    "content": "You are a task scheduling assistant. Choose the best task to do next based on priority and time constraints."
+                },
+                {
                     "role": "user",
-                    "content": "Choose one: Meeting, Email, DeepWork, Break. Only return the word."
+                    "content": f"{context}\n\nChoose one action: Meeting, Email, DeepWork, Break, Report, UrgentCall. Reply with ONLY the task name."
                 }
             ],
-            timeout=10
+            temperature=0.7,
+            max_tokens=10
         )
-
+        
         raw_action = response.choices[0].message.content.strip() if response.choices else "Email"
-
-        valid_actions = ["Meeting", "Email", "DeepWork", "Break"]
+        
+        # Validate action
+        valid_actions = ["Meeting", "Email", "DeepWork", "Break", "Report", "UrgentCall"]
         action = next((a for a in valid_actions if a.lower() in raw_action.lower()), "Email")
-
+        
+        return action
     except Exception as e:
-        print(f"[ERROR] LLM failed: {e}")
-        action = "Email"
+        print(f"[DEBUG] LLM error: {e}", flush=True)
+        return "Email"
 
+def run_task(task_name: str, max_steps: int = 10):
+    """Run inference on a single task."""
+    log_start(task=task_name, env="SchedulrEnv", model=MODEL_NAME)
+    
+    rewards = []
+    history = []
+    steps_taken = 0
+    success = False
     
     try:
+        # Reset environment with task type
+        reset_response = requests.post(f"{ENV_URL}/reset", params={"task": task_name}, timeout=10)
+        if reset_response.status_code != 200:
+            print(f"[DEBUG] Reset failed with status {reset_response.status_code}", flush=True)
         
-        res = requests.post(
-            f"{ENV_URL}/step",
-            params={"action": action},
-            timeout=5
-        ).json()
-
+        # Run episode
+        for step in range(1, max_steps + 1):
+            # Get action from LLM
+            action = get_llm_action(step, history)
+            
+            # Take step in environment
+            try:
+                step_response = requests.post(
+                    f"{ENV_URL}/step",
+                    params={"action": action},
+                    timeout=10
+                )
+                result = step_response.json()
+                
+                reward = float(result.get("reward", 0.1))
+                done = result.get("done", False)
+                error = result.get("error")
+                
+                # Ensure reward is strictly between 0 and 1
+                reward = max(0.1, min(0.9, reward))
+                
+            except Exception as e:
+                print(f"[DEBUG] Step error: {e}", flush=True)
+                reward = 0.1
+                done = False
+                error = "exception"
+            
+            rewards.append(reward)
+            steps_taken = step
+            
+            # Log step
+            log_step(step=step, action=action, reward=reward, done=done, error=error)
+            
+            # Update history
+            history.append(f"Step {step}: {action} -> reward {reward:.2f}")
+            
+            if done:
+                success = True
+                break
         
-        reward = float(res.get("reward", 0.05))
+        # Calculate final score
+        score = sum(rewards) / len(rewards) if rewards else 0.1
+        score = max(0.1, min(0.9, score))
         
-        reward = max(0.05, min(0.95, reward))
-        done = res.get("done", False)
-        error = res.get("error")
-
     except Exception as e:
-        print(f"[ERROR] step failed: {e}")
-        reward = 0.05  
-        done = False
-        error = "exception"
-
-    rewards.append(f"{reward:.2f}")
-
-    print(f"[STEP] step={step_num} action={action} reward={reward:.2f} done={str(done).lower()} error={error if error else 'null'}")
-
+        print(f"[DEBUG] Task error: {e}", flush=True)
+        score = 0.1
     
-    if done and step_num >= 3:
-        success = True
-        break
+    finally:
+        log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
+    
+    return score
 
-print(f"[END] success={str(success).lower()} steps={step_num} rewards={','.join(rewards)}")
+def main():
+    """Run inference on all tasks."""
+    tasks = ["easy", "medium", "hard"]
+    scores = {}
+    
+    for task in tasks:
+        print(f"\n{'='*50}", flush=True)
+        print(f"Running task: {task}", flush=True)
+        print(f"{'='*50}\n", flush=True)
+        
+        score = run_task(task, max_steps=10)
+        scores[task] = score
+    
+    print(f"\n{'='*50}", flush=True)
+    print("Final Scores:", flush=True)
+    for task, score in scores.items():
+        print(f"  {task}: {score:.4f}", flush=True)
+    print(f"{'='*50}\n", flush=True)
+
+if __name__ == "__main__":
+    main()
