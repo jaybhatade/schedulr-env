@@ -32,7 +32,7 @@ def step(action: str):
     task = next((t for t in state["tasks"] if t["name"] == action), None)
 
     if not task:
-        return {"reward": 0.1, "done": False, "error": "invalid_task", "state": state}
+        return {"reward": 0.01, "done": False, "error": "invalid_task", "state": state}
 
     state["time_left"] -= task["time"]
     state["energy"] -= 10
@@ -44,7 +44,7 @@ def step(action: str):
     if task["priority"] == 3 and state["time_left"] > 0: base_reward += 0.2
 
     # Ensure reward is strictly between 0 and 1 (not 0.0 or 1.0)
-    reward = float(max(0.1, min(0.9, base_reward)))
+    reward = max(0.01, min(0.99, base_reward))
 
     if random.random() < 0.3:
         state["tasks"].append({"name": "UrgentCall", "priority": 3, "time": 1})
@@ -63,3 +63,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
