@@ -39,9 +39,14 @@ def step(action: str):
     state["completed"].append(task["name"])
     state["tasks"].remove(task)
 
-    base_reward = task["priority"] / 3
-    if state["energy"] < 30: base_reward -= 0.2
-    if task["priority"] == 3 and state["time_left"] > 0: base_reward += 0.2
+    # Calculate base reward (scale to avoid exact 0 or 1)
+    base_reward = (task["priority"] / 3) * 0.9 + 0.05  # Maps [1,2,3] priority to [0.35, 0.65, 0.95]
+    
+    # Apply modifiers
+    if state["energy"] < 30: 
+        base_reward -= 0.15
+    if task["priority"] == 3 and state["time_left"] > 0: 
+        base_reward += 0.15
 
     # Ensure reward is strictly between 0 and 1 (not 0.0 or 1.0)
     reward = max(0.01, min(0.99, base_reward))
@@ -63,4 +68,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
