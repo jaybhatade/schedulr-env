@@ -87,6 +87,7 @@ def step(action: str):
     if task["priority"] == 3 and state["time_left"] > 0:
         base_reward += 0.2
 
+    
     reward = float(max(0.05, min(0.95, base_reward)))
 
     if random.random() < 0.3:
