@@ -5,13 +5,13 @@ version: 1.0
 tasks:
   - name: easy
     description: Small set of tasks with minimal constraints.
-    grader: true 
+    grader: true
   - name: medium
     description: Moderate number of tasks with priorities and interruptions.
-    grader: true 
+    grader: true
   - name: hard
     description: Complex scheduling with limited time, high-priority tasks, and interruptions.
-    grader: true 
+    grader: true
 
 entrypoint:
   reset: /reset
