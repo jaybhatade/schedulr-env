@@ -43,13 +43,13 @@ def step(action: str):
     if state["energy"] < 30: base_reward -= 0.2
     if task["priority"] == 3 and state["time_left"] > 0: base_reward += 0.2
 
-    # FIXED: This is now outside all IF blocks so it always runs
+    
     reward = float(max(0.05, min(0.95, base_reward)))
 
     if random.random() < 0.3:
         state["tasks"].append({"name": "UrgentCall", "priority": 3, "time": 1})
 
-    # FIXED: This is now outside the random block so it always checks if finished
+    
     done = (state["time_left"] <= 0 or len(state["tasks"]) == 0) and state["step"] >= 3
 
     return {"reward": reward, "done": done, "error": None, "state": state}
