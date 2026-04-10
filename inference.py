@@ -99,11 +99,11 @@ def run_task(task_name: str, max_steps: int = 10):
                 error = result.get("error")
                 
                 # Ensure reward is strictly between 0 and 1
-                reward = max(0.1, min(0.9, reward))
+                reward = max(0.01, min(0.99, reward))
                 
             except Exception as e:
                 print(f"[DEBUG] Step error: {e}", flush=True)
-                reward = 0.1
+                reward = 0.01
                 done = False
                 error = "exception"
             
@@ -121,12 +121,12 @@ def run_task(task_name: str, max_steps: int = 10):
                 break
         
         # Calculate final score
-        score = sum(rewards) / len(rewards) if rewards else 0.1
-        score = max(0.1, min(0.9, score))
+        score = sum(rewards) / len(rewards) if rewards else 0.01
+        score = max(0.01, min(0.99, score))
         
     except Exception as e:
         print(f"[DEBUG] Task error: {e}", flush=True)
-        score = 0.1
+        score = 0.01
     
     finally:
         log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
