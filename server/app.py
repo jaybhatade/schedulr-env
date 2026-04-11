@@ -32,7 +32,7 @@ def step(action: str):
     task = next((t for t in state["tasks"] if t["name"] == action), None)
 
     if not task:
-        return {"reward": 0.01, "done": False, "error": "invalid_task", "state": state}
+        return {"reward": 0.1, "done": False, "error": "invalid_task", "state": state}
 
     state["time_left"] -= task["time"]
     state["energy"] -= 10
@@ -40,16 +40,17 @@ def step(action: str):
     state["tasks"].remove(task)
 
     # Calculate base reward (scale to avoid exact 0 or 1)
-    base_reward = (task["priority"] / 3) * 0.9 + 0.05  # Maps [1,2,3] priority to [0.35, 0.65, 0.95]
+    base_reward = (task["priority"] / 3) * 0.85 + 0.1  # Maps [1,2,3] priority to [0.383, 0.667, 0.95]
     
     # Apply modifiers
     if state["energy"] < 30: 
-        base_reward -= 0.15
+        base_reward -= 0.1
     if task["priority"] == 3 and state["time_left"] > 0: 
-        base_reward += 0.15
+        base_reward += 0.1
 
     # Ensure reward is strictly between 0 and 1 (not 0.0 or 1.0)
-    reward = max(0.01, min(0.99, base_reward))
+    # Use wider margins to be safe
+    reward = max(0.001, min(0.999, base_reward))
 
     if random.random() < 0.3:
         state["tasks"].append({"name": "UrgentCall", "priority": 3, "time": 1})
