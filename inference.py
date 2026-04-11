@@ -99,7 +99,8 @@ def run_task(task_name: str, max_steps: int = 10):
                 error = result.get("error")
                 
                 # Ensure reward is strictly between 0 and 1
-                reward = max(0.001, min(0.999, reward))
+                # Use 0.01 and 0.99 to ensure rounding to 2 decimals stays in range
+                reward = max(0.01, min(0.99, reward))
                 
             except Exception as e:
                 print(f"[DEBUG] Step error: {e}", flush=True)
@@ -122,7 +123,8 @@ def run_task(task_name: str, max_steps: int = 10):
         
         # Calculate final score
         score = sum(rewards) / len(rewards) if rewards else 0.5
-        score = max(0.001, min(0.999, score))
+        # Use 0.01 and 0.99 to ensure rounding to 4 decimals stays in range
+        score = max(0.01, min(0.99, score))
         
     except Exception as e:
         print(f"[DEBUG] Task error: {e}", flush=True)
