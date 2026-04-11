@@ -49,8 +49,8 @@ def step(action: str):
         base_reward += 0.1
 
     # Ensure reward is strictly between 0 and 1 (not 0.0 or 1.0)
-    # Use wider margins to be safe
-    reward = max(0.001, min(0.999, base_reward))
+    # Use 0.01 and 0.99 as boundaries to ensure rounding to 2 decimals stays in range
+    reward = max(0.01, min(0.99, base_reward))
 
     if random.random() < 0.3:
         state["tasks"].append({"name": "UrgentCall", "priority": 3, "time": 1})
