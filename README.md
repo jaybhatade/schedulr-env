@@ -46,7 +46,7 @@ Rewards are calculated based on:
 - Task priority (higher priority = higher reward)
 - Energy management (penalty if energy < 30)
 - Time efficiency (bonus for completing high-priority tasks with time remaining)
-- All rewards are strictly between 0.1 and 0.9 (never 0.0 or 1.0)
+- All rewards are strictly between 0 and 1 (never exactly 0.0 or 1.0)
 
 ## Tasks
 
@@ -135,7 +135,7 @@ Scores vary based on LLM decision-making and random interruptions.
 
 Each task includes an automated grader that:
 - Calculates average reward across the episode
-- Returns a score strictly between 0.1 and 0.9
+- Returns a score strictly between 0 and 1 (never exactly 0.0 or 1.0)
 - Evaluates task completion efficiency and energy management
 
 ## Technical Details
