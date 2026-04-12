@@ -1,204 +1,184 @@
-"""
-SchedulrEnv – server/app.py
+"""SchedulrEnv FastAPI app."""
 
-Fully OpenEnv-spec-compliant response format:
-  /reset  ->  { "observation": {...}, "reward": <float>, "done": false }
-  /step   ->  { "observation": {...}, "reward": <float>, "done": <bool> }
-  /state  ->  current raw state dict
-  /grade  ->  { "task": <str>, "score": <float> }  strictly in (0,1)
+from __future__ import annotations
 
-All reward and score values are STRICTLY between 0 and 1 (never 0.0 or 1.0).
-"""
+from typing import Any, Literal
 
-from fastapi import FastAPI
 import uvicorn
+from fastapi import FastAPI
+from pydantic import BaseModel, Field
 
 app = FastAPI(title="SchedulrEnv")
 
-# ── Module-level state ────────────────────────────────────────────────────────
-_state: dict = {}
+
+class TaskItem(BaseModel):
+    name: str
+    priority: int = Field(ge=1, le=3)
+    time: int = Field(ge=1)
 
 
-# ── Task catalogue ────────────────────────────────────────────────────────────
+class Observation(BaseModel):
+    task_type: Literal["easy", "medium", "hard"]
+    tasks: list[TaskItem]
+    time_left: int
+    energy: int
+    step: int
+    completed: list[str]
 
-def _get_tasks(task_type: str):
+
+class StepResponse(BaseModel):
+    observation: Observation
+    reward: float
+    done: bool
+    info: dict[str, Any] = Field(default_factory=dict)
+
+
+class GradeResponse(BaseModel):
+    task: str
+    score: float
+
+
+_state: dict[str, Any] = {}
+
+
+def _safe(value: float, *, low: float = 0.01, high: float = 0.99) -> float:
+    """Clamp a numeric value strictly inside (0, 1)."""
+    return max(low, min(high, float(value)))
+
+
+def _get_tasks(task_type: str) -> tuple[list[dict[str, int | str]], int]:
     if task_type == "easy":
-        tasks = [
-            {"name": "Email",   "priority": 2, "time": 1},
+        return [
+            {"name": "Email", "priority": 2, "time": 1},
             {"name": "Meeting", "priority": 3, "time": 2},
-            {"name": "Break",   "priority": 1, "time": 1},
-        ]
-        return tasks, 4
-    elif task_type == "medium":
-        tasks = [
-            {"name": "Email",    "priority": 2, "time": 1},
-            {"name": "Meeting",  "priority": 3, "time": 2},
+            {"name": "Break", "priority": 1, "time": 1},
+        ], 4
+    if task_type == "medium":
+        return [
+            {"name": "Email", "priority": 2, "time": 1},
+            {"name": "Meeting", "priority": 3, "time": 2},
             {"name": "DeepWork", "priority": 3, "time": 2},
-            {"name": "Break",    "priority": 1, "time": 1},
-        ]
-        return tasks, 5
-    else:  # hard
-        tasks = [
-            {"name": "Email",    "priority": 2, "time": 1},
-            {"name": "Meeting",  "priority": 3, "time": 2},
-            {"name": "DeepWork", "priority": 3, "time": 3},
-            {"name": "Report",   "priority": 3, "time": 2},
-            {"name": "Break",    "priority": 1, "time": 1},
-        ]
-        return tasks, 6
+            {"name": "Break", "priority": 1, "time": 1},
+        ], 5
+    return [
+        {"name": "Email", "priority": 2, "time": 1},
+        {"name": "Meeting", "priority": 3, "time": 2},
+        {"name": "DeepWork", "priority": 3, "time": 3},
+        {"name": "Report", "priority": 3, "time": 2},
+        {"name": "Break", "priority": 1, "time": 1},
+    ], 6
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
-
-def _safe(value: float) -> float:
-    """Return value clamped strictly into (0.01, 0.99)."""
-    return max(0.01, min(0.99, float(value)))
-
-
-def _episode_score() -> float:
-    """
-    Weighted task-completion ratio mapped to (0.05, 0.95).
-    Can NEVER be 0.0 or 1.0.
-    """
-    completed = _state.get("completed", [])
-    all_tasks = _state.get("all_tasks", [])
-
+def _weighted_completion_score(completed: list[str], all_tasks: list[dict[str, Any]]) -> float:
     if not all_tasks:
         return 0.5
 
-    pmap: dict[str, int] = {}
-    for t in all_tasks:
-        pmap.setdefault(t["name"], t["priority"])
-
-    max_p = sum(pmap.get(t["name"], 1) for t in all_tasks)
-    if max_p == 0:
+    priority_by_name = {task["name"]: int(task.get("priority", 1)) for task in all_tasks}
+    max_priority_sum = sum(priority_by_name[task["name"]] for task in all_tasks)
+    if max_priority_sum <= 0:
         return 0.5
 
-    done_p = sum(pmap.get(n, 1) for n in completed)
-    raw = done_p / max_p          # in [0, 1]
-    score = 0.05 + raw * 0.90     # in [0.05, 0.95]
-    return _safe(score)
+    completed_once = set(completed)
+    done_priority_sum = sum(priority_by_name[name] for name in completed_once if name in priority_by_name)
+    raw_ratio = done_priority_sum / max_priority_sum
+    return _safe(0.05 + raw_ratio * 0.90, low=0.01, high=0.99)
 
 
-def _obs() -> dict:
-    """Return a clean observation dict (no internal fields)."""
-    return {
-        "task_type":  _state.get("task_type", "easy"),
-        "tasks":      _state.get("tasks", []),
-        "time_left":  _state.get("time_left", 0),
-        "energy":     _state.get("energy", 100),
-        "step":       _state.get("step", 0),
-        "completed":  _state.get("completed", []),
-    }
+def _observation() -> Observation:
+    return Observation(
+        task_type=_state.get("task_type", "easy"),
+        tasks=[TaskItem(**task) for task in _state.get("tasks", [])],
+        time_left=int(_state.get("time_left", 0)),
+        energy=int(_state.get("energy", 100)),
+        step=int(_state.get("step", 0)),
+        completed=list(_state.get("completed", [])),
+    )
 
 
-# ── Endpoints ─────────────────────────────────────────────────────────────────
+def _reset_state(task: str) -> None:
+    tasks, total_time = _get_tasks(task)
+    _state.clear()
+    _state.update(
+        {
+            "task_type": task,
+            "tasks": [dict(task_item) for task_item in tasks],
+            "all_tasks": [dict(task_item) for task_item in tasks],
+            "time_left": total_time,
+            "energy": 100,
+            "step": 0,
+            "completed": [],
+        }
+    )
+
 
 @app.get("/health")
-def health():
+def health() -> dict[str, str]:
     return {"status": "healthy"}
 
 
-@app.post("/reset")
-def reset(task: str = "easy"):
-    """
-    OpenEnv-compliant reset.
-    Returns: { observation, reward, done }
-    """
-    global _state
-    tasks, total_time = _get_tasks(task)
-    _state = {
-        "task_type": task,
-        "tasks":     [dict(t) for t in tasks],
-        "all_tasks": [dict(t) for t in tasks],   # saved copy for grader
-        "time_left": total_time,
-        "energy":    100,
-        "step":      0,
-        "completed": [],
-    }
-    # reward at reset is a neutral mid-range value (never 0.0)
-    return {
-        "observation": _obs(),
-        "reward":      0.5,
-        "done":        False,
-    }
+@app.post("/reset", response_model=StepResponse)
+def reset(task: Literal["easy", "medium", "hard"] = "easy") -> StepResponse:
+    _reset_state(task)
+    return StepResponse(observation=_observation(), reward=0.50, done=False, info={"task": task})
 
 
-@app.post("/step")
-def step(action: str):
-    """
-    OpenEnv-compliant step.
-    Returns: { observation, reward, done }
-    reward is ALWAYS strictly in (0, 1).
-    """
-    global _state
-    _state["step"] = _state.get("step", 0) + 1
+@app.post("/step", response_model=StepResponse)
+def step(action: str) -> StepResponse:
+    if not _state:
+        _reset_state("easy")
 
-    task = next((t for t in _state["tasks"] if t["name"] == action), None)
+    _state["step"] = int(_state.get("step", 0)) + 1
+    current_tasks = _state.get("tasks", [])
+    task = next((task_item for task_item in current_tasks if task_item["name"] == action), None)
 
-    if not task:
-        # Invalid action: small but non-zero reward
-        return {
-            "observation": _obs(),
-            "reward":      0.05,
-            "done":        False,
-        }
+    if task is None:
+        return StepResponse(
+            observation=_observation(),
+            reward=0.05,
+            done=False,
+            info={"error": "invalid_action"},
+        )
 
-    _state["time_left"] -= task["time"]
-    _state["energy"]    -= 10
-    _state["completed"].append(task["name"])
-    _state["tasks"] = [t for t in _state["tasks"] if t["name"] != task["name"]]
+    _state["time_left"] = int(_state.get("time_left", 0)) - int(task["time"])
+    _state["energy"] = max(0, int(_state.get("energy", 100)) - 10)
+    _state.setdefault("completed", []).append(task["name"])
+    _state["tasks"] = [task_item for task_item in current_tasks if task_item["name"] != task["name"]]
 
-    # Base reward: priority [1,2,3] → [0.35, 0.60, 0.85]
-    base = 0.10 + (task["priority"] / 3) * 0.75
+    reward = 0.10 + (int(task["priority"]) / 3.0) * 0.75
+    if int(_state["energy"]) < 30:
+        reward -= 0.08
+    if int(task["priority"]) == 3 and int(_state["time_left"]) > 0:
+        reward += 0.08
 
-    if _state["energy"] < 30:
-        base -= 0.08   # burnout penalty; min = 0.19
-    if task["priority"] == 3 and _state["time_left"] > 0:
-        base += 0.08   # high-priority bonus; max = 0.93
+    done = (int(_state["time_left"]) <= 0 or len(_state["tasks"]) == 0) and int(_state["step"]) >= 3
+    episode_score = _weighted_completion_score(_state.get("completed", []), _state.get("all_tasks", []))
 
-    reward = _safe(base)
-
-    # Episode ends when time runs out OR no tasks left (min 3 steps)
-    done = (
-        (_state["time_left"] <= 0 or len(_state["tasks"]) == 0)
-        and _state["step"] >= 3
+    return StepResponse(
+        observation=_observation(),
+        reward=_safe(reward),
+        done=done,
+        info={"score": episode_score},
     )
-
-    return {
-        "observation": _obs(),
-        "reward":      reward,   # strictly in (0.01, 0.99)
-        "done":        done,
-    }
 
 
 @app.get("/state")
-def get_state():
-    """Returns raw internal state (OpenEnv compliant)."""
-    return _state
+def state() -> dict[str, Any]:
+    return dict(_state)
 
 
-@app.post("/grade")
-def grade(task: str = "easy"):
-    """
-    Programmatic grader endpoint.
-    Called by the OpenEnv validator to get the task score.
-    Returns a score STRICTLY in (0, 1).
-    """
-    # If the current state doesn't match the requested task, reset it first.
+@app.api_route("/grade", methods=["GET", "POST"], response_model=GradeResponse)
+def grade(task: Literal["easy", "medium", "hard"] = "easy") -> GradeResponse:
     if _state.get("task_type") != task or not _state.get("all_tasks"):
-        reset(task)
+        _reset_state(task)
 
-    score = _safe(_episode_score())
-    return {"task": task, "score": score}
+    score = _weighted_completion_score(_state.get("completed", []), _state.get("all_tasks", []))
+    return GradeResponse(task=task, score=_safe(score))
 
 
-# ── Entry point ───────────────────────────────────────────────────────────────
-
-def main():
+def main() -> None:
     uvicorn.run("server.app:app", host="0.0.0.0", port=7860, reload=False)
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=7860)
-    
+    main()
+
