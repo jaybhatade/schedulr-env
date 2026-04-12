@@ -11,9 +11,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ── Required environment variables ──────────────────────────────────────────
-API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
-MODEL_NAME   = os.getenv("MODEL_NAME",   "gpt-4o-mini")
-HF_TOKEN     = os.getenv("HF_TOKEN",     "")
+API_BASE_URL = os.getenv("API_BASE_URL")
+MODEL_NAME   = os.getenv("MODEL_NAME")
+HF_TOKEN     = os.getenv("HF_TOKEN")
 API_KEY      = os.getenv("HF_TOKEN")
 ENV_URL      = os.getenv("ENV_URL",      "http://localhost:7860")
 
@@ -77,7 +77,10 @@ def get_llm_action(step_num: int, history: list) -> str:
             max_tokens=10,
         )
         raw = (response.choices[0].message.content or "").strip()
+        print(f"[DEBUG] RAW LLM: {raw}", flush=True)
         action = next((a for a in VALID_ACTIONS if a.lower() in raw.lower()), "Email")
+        
+
         return action
     except Exception as exc:
         print(f"[DEBUG] LLM error: {exc}", flush=True)
@@ -171,7 +174,6 @@ def main() -> None:
     for task, score in scores.items():
         print(f"  {task}: {score:.4f}", flush=True)
     print(f"{'='*50}\n", flush=True)
-
 
 if __name__ == "__main__":
     main()

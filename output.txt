@@ -3,87 +3,57 @@
 Running task: easy
 ==================================================
 
-[START] {"task": "easy", "env": "SchedulrEnv", "model": "demistralai/Mistral-7B-Instruct-v0.2"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXLoY-2kFHot-9eb30c8aea63ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 1, "action": "Email", "reward": 0.60, "done": false, "error": null}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXLu2-2kFHot-9eb30c8e6ba9ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 2, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXLyN-2kFHot-9eb30c905835ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 3, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXM44-2kFHot-9eb30c91fc8cff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 4, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXM8j-2kFHot-9eb30c93a8d7ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 5, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXMDL-2kFHot-9eb30c956da0ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 6, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXMHk-2kFHot-9eb30c96f9c2ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 7, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXMMz-2kFHot-9eb30c988df7ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 8, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXMSR-2kFHot-9eb30c9a29b4ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 9, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXMWr-2kFHot-9eb30c9bbdf2ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 10, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[END] {"success": false, "steps": 10, "score": 0.1050, "rewards": [0.60,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05]}
+[START] {"task": "easy", "env": "SchedulrEnv", "model": "meta-llama/llama-3-8b-instruct"}
+[STEP] {"step": 1, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 2, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 3, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 4, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 5, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 6, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 7, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 8, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 9, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 10, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[END] {"success": false, "steps": 10, "score": 0.0500, "rewards": [0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05]}
 
 ==================================================
 Running task: medium
 ==================================================
 
-[START] {"task": "medium", "env": "SchedulrEnv", "model": "demistralai/Mistral-7B-Instruct-v0.2"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXMbN-2kFHot-9eb30c9d59feff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 1, "action": "Email", "reward": 0.60, "done": false, "error": null}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXMfm-2kFHot-9eb30c9eee06ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 2, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXMkB-2kFHot-9eb30ca08a4bff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 3, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXMpb-2kFHot-9eb30ca22eb0ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 4, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXMu6-2kFHot-9eb30ca3cb73ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 5, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXMyQ-2kFHot-9eb30ca55f88ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 6, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXN3w-2kFHot-9eb30ca70c26ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 7, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXN8X-2kFHot-9eb30ca8a87bff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 8, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXNDD-2kFHot-9eb30caa5d19ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 9, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXNHZ-2kFHot-9eb30cabe965ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 10, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[END] {"success": false, "steps": 10, "score": 0.1050, "rewards": [0.60,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05]}
+[START] {"task": "medium", "env": "SchedulrEnv", "model": "meta-llama/llama-3-8b-instruct"}
+[STEP] {"step": 1, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 2, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 3, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 4, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 5, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 6, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 7, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 8, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 9, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 10, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[END] {"success": false, "steps": 10, "score": 0.0500, "rewards": [0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05]}
 
 ==================================================
 Running task: hard
 ==================================================
 
-[START] {"task": "hard", "env": "SchedulrEnv", "model": "demistralai/Mistral-7B-Instruct-v0.2"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXNNL-2kFHot-9eb30cadae77ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 1, "action": "Email", "reward": 0.60, "done": false, "error": null}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXNSX-2kFHot-9eb30caf3b40ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 2, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXNWt-2kFHot-9eb30cb0c802ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 3, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXNbM-2kFHot-9eb30cb26d22ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 4, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXNfn-2kFHot-9eb30cb3f9dcff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 5, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXNkP-2kFHot-9eb30cb5ae97ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 6, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXNpq-2kFHot-9eb30cb74af6ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 7, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXNuQ-2kFHot-9eb30cb8ffa4ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 8, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXNyg-2kFHot-9eb30cba8be1ff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 9, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[DEBUG] LLM error: Error code: 401 - {'id': 'oerXP43-2kFHot-9eb30cbc087bff73', 'error': {'message': 'Invalid API key provided. You can find your API key at https://api.together.ai/settings/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
-[STEP] {"step": 10, "action": "Email", "reward": 0.05, "done": false, "error": "invalid_task"}
-[END] {"success": false, "steps": 10, "score": 0.1050, "rewards": [0.60,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05]}
+[START] {"task": "hard", "env": "SchedulrEnv", "model": "meta-llama/llama-3-8b-instruct"}
+[STEP] {"step": 1, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 2, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 3, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 4, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 5, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 6, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 7, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 8, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 9, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[STEP] {"step": 10, "action": "UrgentCall", "reward": 0.05, "done": false, "error": "invalid_task"}
+[END] {"success": false, "steps": 10, "score": 0.0500, "rewards": [0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05]}
 
 ==================================================
 Final Scores:
-  easy: 0.1050
-  medium: 0.1050
-  hard: 0.1050
+  easy: 0.0500
+  medium: 0.0500
+  hard: 0.0500
 ==================================================
 
