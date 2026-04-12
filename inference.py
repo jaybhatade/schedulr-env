@@ -4,33 +4,35 @@ Follows the required [START] / [STEP] / [END] log format exactly.
 All variables read from environment; uses OpenAI client for LLM calls.
 """
 import os
-import json
 import requests
 from openai import OpenAI
-from dotenv import load_dotenv
-load_dotenv()
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 # ── Required environment variables ──────────────────────────────────────────
-API_BASE_URL = os.getenv("API_BASE_URL")
-MODEL_NAME   = os.getenv("MODEL_NAME")
-HF_TOKEN     = os.getenv("HF_TOKEN")
-API_KEY      = os.getenv("HF_TOKEN")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+MODEL_NAME   = os.getenv("MODEL_NAME",   "meta-llama/Llama-3.3-70B-Instruct")
+HF_TOKEN     = os.getenv("HF_TOKEN",     "")
+API_KEY      = HF_TOKEN or os.getenv("API_KEY", "")
 ENV_URL      = os.getenv("ENV_URL",      "http://localhost:7860")
 
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
-# ── Logging helpers (exact required format) ──────────────────────────────────
+# ── Logging helpers — exact key=value format required by validator ────────────
 
 def log_start(task: str, env: str, model: str) -> None:
-    print(f'[START] {{"task": "{task}", "env": "{env}", "model": "{model}"}}', flush=True)
+    print(f"[START] task={task} env={env} model={model}", flush=True)
 
 
 def log_step(step: int, action: str, reward: float, done: bool, error=None) -> None:
-    error_str = f'"{error}"' if error else "null"
+    error_str = error if error else "null"
     done_str  = "true" if done else "false"
     print(
-        f'[STEP] {{"step": {step}, "action": "{action}", '
-        f'"reward": {reward:.2f}, "done": {done_str}, "error": {error_str}}}',
+        f"[STEP] step={step} action={action} reward={reward:.2f} done={done_str} error={error_str}",
         flush=True,
     )
 
@@ -39,18 +41,28 @@ def log_end(success: bool, steps: int, score: float, rewards: list) -> None:
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
     success_str = "true" if success else "false"
     print(
-        f'[END] {{"success": {success_str}, "steps": {steps}, '
-        f'"score": {score:.4f}, "rewards": [{rewards_str}]}}',
+        f"[END] success={success_str} steps={steps} score={score:.2f} rewards={rewards_str}",
         flush=True,
     )
 
 
 # ── LLM action selection ─────────────────────────────────────────────────────
 
-VALID_ACTIONS = ["Meeting", "Email", "DeepWork", "Break", "Report", "UrgentCall"]
+# UrgentCall removed — it is a random env interruption, not an agent-selectable action
+VALID_ACTIONS = ["Meeting", "Email", "DeepWork", "Break", "Report"]
 
 
-def get_llm_action(step_num: int, history: list) -> str:
+def get_llm_action(step_num: int, obs: dict, history: list) -> str:
+    """Pick an action that is both valid per LLM and actually available in current state."""
+    available = [t["name"] for t in obs.get("tasks", [])]
+
+    # If only one task left, just pick it — no need to call LLM
+    if len(available) == 1:
+        return available[0]
+
+    # Filter VALID_ACTIONS to only those currently available
+    choices = [a for a in VALID_ACTIONS if a in available] or available or ["Email"]
+
     try:
         context = "\n".join(history[-5:]) if history else "Start scheduling your day."
         response = client.chat.completions.create(
@@ -68,8 +80,8 @@ def get_llm_action(step_num: int, history: list) -> str:
                     "role": "user",
                     "content": (
                         f"{context}\n\n"
-                        f"Available actions: {', '.join(VALID_ACTIONS)}. "
-                        "Which task should be done next?"
+                        f"Available actions right now: {', '.join(choices)}. "
+                        "Which task should be done next? Reply with only the task name."
                     ),
                 },
             ],
@@ -77,14 +89,12 @@ def get_llm_action(step_num: int, history: list) -> str:
             max_tokens=10,
         )
         raw = (response.choices[0].message.content or "").strip()
-        print(f"[DEBUG] RAW LLM: {raw}", flush=True)
-        action = next((a for a in VALID_ACTIONS if a.lower() in raw.lower()), "Email")
-        
-
+        # Match against currently available tasks only
+        action = next((a for a in choices if a.lower() in raw.lower()), choices[0])
         return action
     except Exception as exc:
         print(f"[DEBUG] LLM error: {exc}", flush=True)
-        return "Email"
+        return choices[0]
 
 
 # ── Episode runner ────────────────────────────────────────────────────────────
@@ -102,25 +112,27 @@ def run_task(task_name: str, max_steps: int = 10) -> float:
     steps_taken = 0
     success     = False
     score       = 0.5
+    obs         = {}
 
     try:
         r = requests.post(f"{ENV_URL}/reset", params={"task": task_name}, timeout=15)
         if r.status_code != 200:
             print(f"[DEBUG] /reset returned {r.status_code}", flush=True)
+        else:
+            obs = r.json()
 
         for step in range(1, max_steps + 1):
-            action = get_llm_action(step, history)
+            action = get_llm_action(step, obs, history)
 
             try:
                 resp   = requests.post(f"{ENV_URL}/step", params={"action": action}, timeout=15)
                 result = resp.json()
 
-                reward = _clamp_score(result.get("reward", 0.5))
-                done   = bool(result.get("done", False))
-                error  = result.get("error")
-
-                # If the env already computed an episode score, prefer it
+                reward    = _clamp_score(result.get("reward", 0.5))
+                done      = bool(result.get("done", False))
+                error     = result.get("error")
                 env_score = result.get("score")
+                obs       = result.get("state", obs)
 
             except Exception as exc:
                 print(f"[DEBUG] /step error: {exc}", flush=True)
@@ -132,10 +144,12 @@ def run_task(task_name: str, max_steps: int = 10) -> float:
             rewards.append(reward)
             steps_taken = step
             log_step(step=step, action=action, reward=reward, done=done, error=error)
-            history.append(f"Step {step}: {action} → reward {reward:.2f}")
+            history.append(
+                f"Step {step}: {action} → reward {reward:.2f} | "
+                f"time_left={obs.get('time_left','?')} energy={obs.get('energy','?')}"
+            )
 
             if done:
-                # Use env's episode score if available, else compute from rewards
                 if env_score is not None:
                     score = _clamp_score(env_score)
                 else:
@@ -143,7 +157,6 @@ def run_task(task_name: str, max_steps: int = 10) -> float:
                 success = True
                 break
 
-        # If episode never finished naturally, score from accumulated rewards
         if not success:
             score = _clamp_score(sum(rewards) / len(rewards)) if rewards else 0.5
 
@@ -172,8 +185,9 @@ def main() -> None:
     print(f"\n{'='*50}", flush=True)
     print("Final Scores:", flush=True)
     for task, score in scores.items():
-        print(f"  {task}: {score:.4f}", flush=True)
+        print(f"  {task}: {score:.2f}", flush=True)
     print(f"{'='*50}\n", flush=True)
+
 
 if __name__ == "__main__":
     main()
