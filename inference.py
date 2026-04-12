@@ -1,160 +1,175 @@
+"""
+Inference script for SchedulrEnv.
+Follows the required [START] / [STEP] / [END] log format exactly.
+All variables read from environment; uses OpenAI client for LLM calls.
+"""
 import os
 import json
-from openai import OpenAI
 import requests
+from openai import OpenAI
 
-# Environment variables as per requirements
+# ── Required environment variables ──────────────────────────────────────────
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
-HF_TOKEN = os.getenv("HF_TOKEN")
+MODEL_NAME   = os.getenv("MODEL_NAME",   "gpt-4o-mini")
+HF_TOKEN     = os.getenv("HF_TOKEN",     "")
+API_KEY      = os.getenv("API_KEY",      os.getenv("OPENAI_API_KEY", HF_TOKEN))
+ENV_URL      = os.getenv("ENV_URL",      "http://localhost:7860")
 
-# Optional - if using from_docker_image()
-LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
+client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
-ENV_URL = os.getenv("ENV_URL", "http://localhost:7860")
+# ── Logging helpers (exact required format) ──────────────────────────────────
 
-# Initialize OpenAI client
-client = OpenAI(
-    base_url=API_BASE_URL,
-    api_key=os.environ.get("API_KEY", os.environ.get("OPENAI_API_KEY", ""))
-)
-
-def log_start(task: str, env: str, model: str):
-    """Log the start of inference in required format."""
+def log_start(task: str, env: str, model: str) -> None:
     print(f'[START] {{"task": "{task}", "env": "{env}", "model": "{model}"}}', flush=True)
 
-def log_step(step: int, action: str, reward: float, done: bool, error: str = None):
-    """Log each step in required format."""
-    error_str = f'"{error}"' if error else "null"
-    print(f'[STEP] {{"step": {step}, "action": "{action}", "reward": {reward:.2f}, "done": {str(done).lower()}, "error": {error_str}}}', flush=True)
 
-def log_end(success: bool, steps: int, score: float, rewards: list):
-    """Log the end of inference in required format."""
-    rewards_str = ",".join([f"{r:.2f}" for r in rewards])
-    print(f'[END] {{"success": {str(success).lower()}, "steps": {steps}, "score": {score:.4f}, "rewards": [{rewards_str}]}}', flush=True)
+def log_step(step: int, action: str, reward: float, done: bool, error=None) -> None:
+    error_str = f'"{error}"' if error else "null"
+    done_str  = "true" if done else "false"
+    print(
+        f'[STEP] {{"step": {step}, "action": "{action}", '
+        f'"reward": {reward:.2f}, "done": {done_str}, "error": {error_str}}}',
+        flush=True,
+    )
+
+
+def log_end(success: bool, steps: int, score: float, rewards: list) -> None:
+    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+    success_str = "true" if success else "false"
+    print(
+        f'[END] {{"success": {success_str}, "steps": {steps}, '
+        f'"score": {score:.4f}, "rewards": [{rewards_str}]}}',
+        flush=True,
+    )
+
+
+# ── LLM action selection ─────────────────────────────────────────────────────
+
+VALID_ACTIONS = ["Meeting", "Email", "DeepWork", "Break", "Report", "UrgentCall"]
+
 
 def get_llm_action(step_num: int, history: list) -> str:
-    """Get action from LLM."""
     try:
         context = "\n".join(history[-5:]) if history else "Start scheduling your day."
-        
         response = client.chat.completions.create(
             model=MODEL_NAME,
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a task scheduling assistant. Choose the best task to do next based on priority and time constraints."
+                    "content": (
+                        "You are a task scheduling assistant. "
+                        "Choose the single best task to do next based on priority and time. "
+                        "Reply with ONLY the task name — no punctuation, no explanation."
+                    ),
                 },
                 {
                     "role": "user",
-                    "content": f"{context}\n\nChoose one action: Meeting, Email, DeepWork, Break, Report, UrgentCall. Reply with ONLY the task name."
-                }
+                    "content": (
+                        f"{context}\n\n"
+                        f"Available actions: {', '.join(VALID_ACTIONS)}. "
+                        "Which task should be done next?"
+                    ),
+                },
             ],
-            temperature=0.7,
-            max_tokens=10
+            temperature=0.3,
+            max_tokens=10,
         )
-        
-        raw_action = response.choices[0].message.content.strip() if response.choices else "Email"
-        
-        # Validate action
-        valid_actions = ["Meeting", "Email", "DeepWork", "Break", "Report", "UrgentCall"]
-        action = next((a for a in valid_actions if a.lower() in raw_action.lower()), "Email")
-        
+        raw = (response.choices[0].message.content or "").strip()
+        action = next((a for a in VALID_ACTIONS if a.lower() in raw.lower()), "Email")
         return action
-    except Exception as e:
-        print(f"[DEBUG] LLM error: {e}", flush=True)
+    except Exception as exc:
+        print(f"[DEBUG] LLM error: {exc}", flush=True)
         return "Email"
 
-def run_task(task_name: str, max_steps: int = 10):
-    """Run inference on a single task."""
+
+# ── Episode runner ────────────────────────────────────────────────────────────
+
+def _clamp_score(value: float) -> float:
+    """Ensure score is strictly between 0 and 1."""
+    return max(0.01, min(0.99, float(value)))
+
+
+def run_task(task_name: str, max_steps: int = 10) -> float:
     log_start(task=task_name, env="SchedulrEnv", model=MODEL_NAME)
-    
-    rewards = []
-    history = []
+
+    rewards     = []
+    history     = []
     steps_taken = 0
-    success = False
-    
+    success     = False
+    score       = 0.5
+
     try:
-        # Reset environment with task type
-        reset_response = requests.post(f"{ENV_URL}/reset", params={"task": task_name}, timeout=10)
-        if reset_response.status_code != 200:
-            print(f"[DEBUG] Reset failed with status {reset_response.status_code}", flush=True)
-        
-        # Run episode
+        r = requests.post(f"{ENV_URL}/reset", params={"task": task_name}, timeout=15)
+        if r.status_code != 200:
+            print(f"[DEBUG] /reset returned {r.status_code}", flush=True)
+
         for step in range(1, max_steps + 1):
-            # Get action from LLM
             action = get_llm_action(step, history)
-            
-            # Take step in environment
+
             try:
-                step_response = requests.post(
-                    f"{ENV_URL}/step",
-                    params={"action": action},
-                    timeout=10
-                )
-                result = step_response.json()
-                
-                reward = float(result.get("reward", 0.5))
-                done = result.get("done", False)
-                error = result.get("error")
-                
-                # Ensure reward is strictly between 0 and 1
-                # Use 0.01 and 0.99 to ensure rounding to 2 decimals stays in range
-                reward = max(0.01, min(0.99, reward))
-                
-            except Exception as e:
-                print(f"[DEBUG] Step error: {e}", flush=True)
-                reward = 0.5
-                done = False
-                error = "exception"
-            
+                resp   = requests.post(f"{ENV_URL}/step", params={"action": action}, timeout=15)
+                result = resp.json()
+
+                reward = _clamp_score(result.get("reward", 0.5))
+                done   = bool(result.get("done", False))
+                error  = result.get("error")
+
+                # If the env already computed an episode score, prefer it
+                env_score = result.get("score")
+
+            except Exception as exc:
+                print(f"[DEBUG] /step error: {exc}", flush=True)
+                reward    = 0.5
+                done      = False
+                error     = "exception"
+                env_score = None
+
             rewards.append(reward)
             steps_taken = step
-            
-            # Log step
             log_step(step=step, action=action, reward=reward, done=done, error=error)
-            
-            # Update history
-            history.append(f"Step {step}: {action} -> reward {reward:.2f}")
-            
+            history.append(f"Step {step}: {action} → reward {reward:.2f}")
+
             if done:
+                # Use env's episode score if available, else compute from rewards
+                if env_score is not None:
+                    score = _clamp_score(env_score)
+                else:
+                    score = _clamp_score(sum(rewards) / len(rewards))
                 success = True
                 break
-        
-        # Calculate final score
-        score = sum(rewards) / len(rewards) if rewards else 0.5
-        # Use 0.01 and 0.99 to ensure rounding to 4 decimals stays in range
-        score = max(0.01, min(0.99, score))
-        
-    except Exception as e:
-        print(f"[DEBUG] Task error: {e}", flush=True)
+
+        # If episode never finished naturally, score from accumulated rewards
+        if not success:
+            score = _clamp_score(sum(rewards) / len(rewards)) if rewards else 0.5
+
+    except Exception as exc:
+        print(f"[DEBUG] Task error: {exc}", flush=True)
         score = 0.5
-    
+
     finally:
         log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
-    
+
     return score
 
-def main():
-    """Run inference on all tasks."""
-    tasks = ["easy", "medium", "hard"]
+
+# ── Entry point ───────────────────────────────────────────────────────────────
+
+def main() -> None:
+    tasks  = ["easy", "medium", "hard"]
     scores = {}
-    
+
     for task in tasks:
         print(f"\n{'='*50}", flush=True)
         print(f"Running task: {task}", flush=True)
         print(f"{'='*50}\n", flush=True)
-        
-        score = run_task(task, max_steps=10)
-        scores[task] = score
-    
+        scores[task] = run_task(task, max_steps=10)
+
     print(f"\n{'='*50}", flush=True)
     print("Final Scores:", flush=True)
     for task, score in scores.items():
         print(f"  {task}: {score:.4f}", flush=True)
     print(f"{'='*50}\n", flush=True)
 
+
 if __name__ == "__main__":
     main()
-
-    
