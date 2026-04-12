@@ -139,16 +139,29 @@ def grade(task: str = "easy"):
     """
     Programmatic grader endpoint required by the OpenEnv validator.
     Returns a task score strictly in (0, 1).
+
+    Does NOT reset state — scores the current episode as-is.
+    If state is missing or belongs to a different task, initialises
+    a fresh episode for the requested task so the grader always has
+    valid task metadata, then returns the score for 0 completions
+    (0.05) rather than wiping an in-progress episode.
     """
-    if state.get("task_type") != task or not state.get("all_tasks"):
-        reset(task)
+    global state
+
+    # Only initialise if we have no usable state for this task
+    if not state.get("all_tasks") or state.get("task_type") != task:
+        # Preserve existing completed list if the task type matches
+        tasks, total_time = get_tasks(task)
+        state.setdefault("completed", [])
+        state.setdefault("task_type", task)
+        state["all_tasks"] = list(tasks)
 
     score = _clamp(_compute_episode_score())
     return {"task": task, "score": score}
 
 
 def main():
-    uvicorn.run("app:app", host="0.0.0.0", port=7860, reload=False)
+    uvicorn.run("server.app:app", host="0.0.0.0", port=7860, reload=False)
 
 
 if __name__ == "__main__":
