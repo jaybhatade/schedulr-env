@@ -7,12 +7,14 @@ import os
 import json
 import requests
 from openai import OpenAI
+from dotenv import load_dotenv
+load_dotenv()
 
 # ── Required environment variables ──────────────────────────────────────────
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME   = os.getenv("MODEL_NAME",   "gpt-4o-mini")
 HF_TOKEN     = os.getenv("HF_TOKEN",     "")
-API_KEY      = os.getenv("API_KEY",      os.getenv("OPENAI_API_KEY", HF_TOKEN))
+API_KEY      = os.getenv("HF_TOKEN")
 ENV_URL      = os.getenv("ENV_URL",      "http://localhost:7860")
 
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
