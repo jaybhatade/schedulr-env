@@ -1,17 +1,23 @@
 name: SchedulrEnv
-description: A real-world task scheduling environment where an agent optimizes a workday.
+description: >
+  A real-world task scheduling environment where an AI agent optimizes
+  a workday by choosing tasks based on priority, time constraints, and energy.
 version: "1.0"
 tasks:
   - name: easy
-    description: Small set of tasks with minimal constraints.
+    description: Small set of 3 tasks with minimal time constraints. Agent must schedule Email, Meeting, and Break optimally.
     grader: true
+    grader_endpoint: /grade
   - name: medium
-    description: Moderate number of tasks with priorities and interruptions.
+    description: Moderate set of 4 tasks including DeepWork. Interruptions may occur. Agent must balance priorities.
     grader: true
+    grader_endpoint: /grade
   - name: hard
-    description: Complex scheduling with limited time and high-priority tasks.
+    description: Complex set of 5 tasks with limited time. High-priority tasks compete for scarce slots.
     grader: true
+    grader_endpoint: /grade
 entrypoint:
   reset: /reset
   step: /step
   state: /state
+  grade: /grade
