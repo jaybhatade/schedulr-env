@@ -6,6 +6,8 @@ state = {}
 
 # ── Task definitions ────────────────────────────────────────────────────────
 
+
+
 def get_tasks(task_type: str):
     if task_type == "easy":
         return [
@@ -67,6 +69,9 @@ def _compute_episode_score() -> float:
 def health():
     return {"status": "healthy"}
 
+@app.get("/")
+def root():
+    return {"message": "API is running"}
 
 @app.post("/reset")
 def reset(task: str = "easy"):
